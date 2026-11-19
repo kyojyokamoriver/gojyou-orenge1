@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#24190e">
+<meta name="description" content="ごじょリアンAR。ふわふわ浮かぶ宇宙人と、スマホで写真を撮ろう。">
+<title>ごじょリアンAR</title>
+<link rel="icon" href="alien-open.png">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+</head>
+<body>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<symbol id="camera-icon" viewBox="0 0 24 24"><path d="M4 6.5h3l1.8-2h6.4l1.8 2h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+<symbol id="reload-icon" viewBox="0 0 24 24"><path d="M20 4v6h-6m6 0a8 8 0 1 0 .1 4"/></symbol>
+<symbol id="swap-icon" viewBox="0 0 24 24"><path d="M20 8a8 8 0 0 0-14-2L3 9m0-5v5h5m-4 7a8 8 0 0 0 14 2l3-3m0 5v-5h-5"/></symbol>
+<symbol id="close-icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="download-icon" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v4h16v-4"/></symbol>
+</svg>
+<main class="booth" aria-label="ごじょリアンAR">
+  <div class="viewfinder" id="viewfinder" tabindex="0" aria-label="撮影画面。外カメでは床をタップして配置し、ドラッグで回転、２本指で拡大縮小">
+    <video id="video" playsinline muted autoplay></video>
+    <canvas id="underlay" class="layer" aria-hidden="true"></canvas>
+    <canvas id="world" class="layer" aria-hidden="true"></canvas>
+    <canvas id="overlay" class="layer" aria-hidden="true"></canvas>
+    <div id="ar-entry" class="ar-entry" hidden>
+      <p>床に置いて、近づいたり<br>周りを歩いたりしてみてね</p>
+      <a id="native-ar" class="native-ar" rel="ar" aria-label="床に向けて空間ARを開く" hidden><img src="alien-open.png" alt=""><span class="ar-action">床に置く</span></a>
+      <button id="ar-start" class="save" type="button" hidden>床に置く</button>
+      <p class="ar-note">iPhoneはSafariで開いて、「AR」を選択</p>
+    </div>
+    <p id="ar-unavailable" class="ar-unavailable" hidden>このブラウザでは空間ARを開始できません。iPhoneはSafari、AndroidはAR対応のChromeで開いてください。</p>
+    <button id="reload" class="icon-button reload" type="button" aria-label="ページを再読み込み" title="再読み込み"><svg><use href="#reload-icon"/></svg></button>
+    <button id="safari-help-open" class="walk" type="button" hidden>Safari用リンク</button>
+    <span id="view-label" class="view-label" hidden>外カメ</span>
+    <div class="camera-state" id="camera-state" hidden>
+      <p id="error" role="status"></p>
+      <button id="start" class="save"><svg><use href="#camera-icon"/></svg>カメラを開く</button>
+    </div>
+    <p id="hint" class="view-hint" aria-live="polite" hidden></p>
+    <div id="flash" class="flash" aria-hidden="true"></div>
+  </div>
+  <div class="control" aria-label="撮影の操作">
+    <button id="last" class="thumbnail" aria-label="前回の写真を見る" disabled></button>
+    <button id="shutter" class="shutter" aria-label="写真を撮る" disabled><i></i></button>
+    <button id="swap" class="icon-button swap" aria-label="内カメに切り替える" disabled><svg><use href="#swap-icon"/></svg><span id="swap-label">内カメ</span></button>
+  </div>
+</main>
+<dialog id="safari-help" class="safari-help" aria-labelledby="safari-help-title">
+  <div class="photo-top"><strong id="safari-help-title">Safariで空間ARを開く</strong><button class="icon-button" type="button" aria-label="案内を閉じる"><svg><use href="#close-icon"/></svg></button></div>
+  <p>アプリ内で開いている場合は、リンクをコピーしてSafariアプリのアドレス欄に貼り付けてください。Safariでも「AR」が灰色になる場合は、この操作だけでは解決しないため、画面の状態をお知らせください。</p>
+  <input id="safari-url" type="url" readonly aria-label="ごじょリアンARのURL">
+  <div class="safari-help-actions">
+    <button id="safari-copy" class="save" type="button">リンクをコピー</button>
+    <span id="safari-copy-status" role="status"></span>
+  </div>
+</dialog>
+<div id="xr-overlay" class="xr-overlay">
+  <div id="xr-controls" hidden>
+    <button id="xr-close" class="icon-button xr-close" type="button" aria-label="ARを閉じる"><svg><use href="#close-icon"/></svg></button>
+    <button id="xr-reload" class="icon-button reload xr-reload" type="button" aria-label="ページを再読み込み" title="再読み込み"><svg><use href="#reload-icon"/></svg></button>
+    <button id="xr-reset" class="walk" type="button" hidden>置き直す</button>
+    <p id="xr-hint" class="view-hint" aria-live="polite"></p>
+    <button id="xr-shutter" class="shutter xr-shutter" type="button" aria-label="AR写真を撮る" hidden><i></i></button>
+  </div>
+<dialog id="photo" aria-labelledby="photo-title">
+  <div class="photo-top"><strong id="photo-title">撮った写真</strong><button id="close-photo" class="icon-button" aria-label="写真を閉じる"><svg><use href="#close-icon"/></svg></button></div>
+  <img id="result" alt="撮影した宇宙人との写真">
+  <div class="photo-actions"><button id="retake" class="retake">撮影にもどる</button><button id="save" class="save"><svg><use href="#download-icon"/></svg>写真を保存</button></div>
+</dialog>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
